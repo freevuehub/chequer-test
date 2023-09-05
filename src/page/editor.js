@@ -1,83 +1,124 @@
-import WebComponent from '~/lib/WebComponent'
-import dc from '~/lib/DocChannel'
+import {
+	useComponent,
+	useElement,
+	useTemplate,
+	useState,
+	useMethods,
+	useMounted,
+	useUnMounted,
+} from '~/lib/WebComponent'
+import pipe from '~/lib/pipe'
+import useDom from '~/lib/useDom'
 import useQueryParams from '~/lib/useQueryParams'
-import '~/component/UserList'
-import '~/component/Editor'
-import '~/component/CreateForm'
+import DocChannel from '~/lib/DocChannel'
 
-class PageEditor extends WebComponent  {
-	state = {
-		name: ''
-	}
+const PageEditor = pipe(
+	useComponent,
+	useState({ name: '', dc: null, users: [] }),
+	useMounted((state, setState) => {
+		const { id } = useQueryParams(window.location.search)
+		const dc = new DocChannel(id)
 
-	event() {
-		document.querySelector('#form')?.addEventListener('submit', (event) => {
-			event.preventDefault()
+		setState({ dc })
+	}),
+	useMethods((state, setState) => {
+		if (!state.name) {
+			useDom('#form').addEventListener('submit', (event) => {
+				event.preventDefault()
 
-			const { id }  = useQueryParams(window.location.search)
+				const { value } = event.currentTarget.elements.namedItem('name')
 
-			const name = event.currentTarget.elements.namedItem('name').value
-			const roomId = id || Math.ceil(Math.random() * 1000)
+				if (!value) return alert('이름을 입력해주세요.')
 
-			window.location.href = `${window.location.pathname}?name=${name}&id=${roomId}`
-		})
-	}
-	mounted() {
-		const { id, name }  = useQueryParams(window.location.search)
+				setState({ name: value })
 
-		if (!!id && !!name) {
-			dc.setChannel = id
-
-			dc.send({
-				type: 'enter',
-				message: name,
+				state.dc.send({ type: 'enter', message: value })
 			})
-			dc.receive((data) => {
-				console.log(data)
-				if (data.type === 'edit') {
-					document.querySelector('#editor').innerHTML = data.message
-				}
-			})
+		} else {
+			const editor = useDom('#editor')
 
-			document.querySelector('#editor')?.addEventListener('keydown', (event) => {
+			editor.addEventListener('keydown', (event) => {
 				if (!event.currentTarget.innerText.trim() && event.code === 'Backspace')
 					event.preventDefault()
 			})
-			document.querySelector('#editor')?.addEventListener('keyup', (event) => {
-				dc.send({
+			editor.addEventListener('keyup', (event) => {
+				state.dc.send({
 					type: 'edit',
 					message: event.currentTarget.innerHTML
 				})
 			})
+
+			state.dc.receive((data) => {
+				if (data.type === 'enter') {
+					setState({ users: [...state.users, data.message] })
+
+					// state.dc.send({
+					// 	type: 'sync',
+					// 	message: {
+					// 		users: [state.name, ...state.users],
+					// 		doc: editor.innerHTML
+					// 	}
+					// })
+				}
+				if (data.type === 'exit') {
+					const hashUsers = new Set(state.users)
+
+					hashUsers.delete(data.message)
+
+					setState({ users: [...hashUsers.values()] })
+				}
+				if (data.type === 'sync') {
+					setState({ users: data.message.users })
+
+					editor.innerHTML = data.message.doc
+				}
+				if (data.type === 'edit') {
+					editor.innerHTML = data.message
+				}
+			})
 		}
-	}
-
-	template() {
-		const { id, name }  = useQueryParams(window.location.search)
-
-		return (!!id && !!name)
-			? `
-				<div class="h-screen w-screen flex items-center justify-center">
-					<div class="wrap flex shadow rounded overflow-hidden" slot="foo">
-						<custom-editor class="flex-1"></custom-editor>
-						<div class="side h-full flex flex-col relative">
-							<h2 class="text-xl text-center text-white">참여자 목록</h2>
-							<custom-users></custom-users>
-							<p id="toast" class="absolute w-full bg-stone-800/[0.7] text-white hidden">
-								<span></span>님이 <br>
-								입장하였습니다.
-							</p>
-						</div>
+	}),
+	useTemplate((state) => state.name ? `
+		<div class="h-screen w-screen flex items-center justify-center">
+			<div class="wrap flex shadow rounded overflow-hidden">
+				<div id="editor" class="w-full h-full overflow-auto font-mono flex-1" contentEditable="true">
+					<div>
+						<br />
 					</div>
 				</div>
-			` : `
-				<div class="h-screen w-screen flex items-center justify-center">
-					<custom-form></custom-form>
+				<div class="side h-full flex flex-col relative">
+					<h2 class="text-xl text-center text-white">참여자 목록</h2>
+					<ul class="user-list overflow-auto text-white flex flex-col">
+						<li>${state.name} (나)</li>
+						${state.users.map((user) => `<li>${user}</li>`)}
+					</ul>
 				</div>
-			`
-	}
-}
+			</div>
+		</div>
+	` : `
+		<div class="h-screen w-screen flex items-center justify-center">
+			<form id="form" class="shadow rounded overflow-hidden">
+				<h1 class="text-xl text-center text-white">닉네임 설정</h1>
+				<div class="inner flex flex-col">
+					<label class="block w-full">
+						<input type="text" class="block w-full" name="name">
+					</label>
+					<button type="submit" class="w-full text-white rounded pointer">
+						입장
+					</button>
+				</div>
+			</form>
+		</div>
+	`),
+	useElement('freevue-editor'),
+	useUnMounted((state) => {
+		state.dc.send({
+			type: 'exit',
+			message: state.name
+		})
 
-window.customElements.define('page-editor', PageEditor)
+		state.dc.close()
+	}),
+)
 
 export default PageEditor

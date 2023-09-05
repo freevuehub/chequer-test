@@ -1,17 +1,23 @@
-import WebComponent from '~/lib/WebComponent'
+import { useComponent, useElement, useTemplate, useMethods } from '~/lib/WebComponent'
+import pipe from '~/lib/pipe'
 
-class PageIndex extends WebComponent  {
-	template() {
-		return `
-			<div class="h-screen w-screen flex items-center justify-center">
-				<a id="create-button" class="text-center text-white text-xl rounded" href="/editor">
-					방 만들기
-				</a>
-			</div>
-		`
-	}
-}
+const PageIndex = pipe(
+	useComponent,
+	useMethods(() => {
+		document.querySelector('#create-button').addEventListener('click', (event) => {
+			event.preventDefault()
 
-window.customElements.define('page-index', PageIndex)
+			window.location.href = `/editor?id=${Math.ceil(Math.random() * 1000)}`
+		})
+	}),
+	useTemplate(`
+		<div class="h-screen w-screen flex items-center justify-center">
+			<button id="create-button" class="text-center text-white text-xl rounded">
+				방 만들기
+			</button>
+		</div>
+	`),
+	useElement('freevue-index')
+)
 
 export default PageIndex

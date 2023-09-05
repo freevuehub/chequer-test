@@ -1,23 +1,20 @@
-import WebComponent from '~/lib/WebComponent'
-import '~/Route'
+import { useComponent, useElement, useTemplate, useRouter } from '~/lib/WebComponent'
+import pipe from '~/lib/pipe'
+
 import '~/page/index.js'
 import '~/page/editor.js'
 
-class App extends WebComponent  {
-	template() {
-		return `
-			<div class="h-screen w-screen">
-				<custom-route pathname="/">
-					<page-index></page-index>
-				</custom-route>
-				<custom-route pathname="/editor">
-					<page-editor></page-editor>
-				</custom-route>
-			</div>
-		`
-	}
-}
-
-window.customElements.define('custom-app', App)
+const App = pipe(
+	useComponent,
+	useTemplate(`
+		<div class="h-screen w-screen">
+			${useRouter({
+				'/': `<freevue-index></freevue-index>`,
+				'/editor': `<freevue-editor></freevue-editor>`,
+			})}
+		</div>
+	`),
+	useElement('freevue-app')
+)
 
 export default App

@@ -1,19 +1,6 @@
-import useQueryParams from "~/lib/useQueryParams";
-
 class DocChannel {
-	channel = ''
-	broadCast = null
-	users = []
-
-	constructor() {
-		this.broadCast = new BroadcastChannel(this.channel)
-	}
-
-	set setChannel(channel) {
-		this.channel = channel
-	}
-	set setUsers(user) {
-		this.users = [...this.users, user]
+	constructor(props) {
+		this.broadCast = new BroadcastChannel(props)
 	}
 
 	send(args) {
@@ -32,4 +19,4 @@ class DocChannel {
 	}
 }
 
-export default new DocChannel()
+export default DocChannel
