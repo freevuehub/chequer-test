@@ -1,17 +1,23 @@
-import WebComponent from '~/lib/WebComponent'
+import { useComponent, useElement, useTemplate, useMethods } from '~/lib/WebComponent'
+import pipe from '~/lib/pipe'
+import useDom from '~/lib/useDom'
 
-class Editor extends WebComponent  {
-	template() {
-		return `
-			<div id="editor" class="w-full h-full overflow-auto font-mono" contentEditable="true">
-				<div>
-					<br />
-				</div>
-			</div>
-		`
-	}
-}
-
-window.customElements.define('custom-editor', Editor)
+const Editor = pipe(
+  useComponent,
+  useMethods(function () {
+    useDom('#editor').addEventListener('keydown', (event) => {
+      if (!event.currentTarget.innerText.trim() && event.code === 'Backspace')
+        event.preventDefault()
+    })
+  }),
+  useTemplate(`
+    <div id="editor" class="w-full h-full overflow-auto font-mono flex-1" contentEditable="true">
+      <div>
+        <br />
+      </div>
+    </div>
+  `),
+  useElement('freevue-editor'),
+)
 
 export default Editor

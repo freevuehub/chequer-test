@@ -64,7 +64,9 @@ export const useElement = (tagName) => (component) => {
 		constructor() {
 			super()
 
-			this.changeState = this.changeState.bind(this)
+			this.mounted = component.mounted
+			this.unMounted = component.unMounted
+			this.methods = component.methods
 		}
 
 		set setState(state) {
@@ -73,25 +75,21 @@ export const useElement = (tagName) => (component) => {
 			this.render()
 		}
 
-		changeState(newState) {
-			this.setState = newState
-		}
-
 		render() {
 			this.innerHTML = typeof this.template === 'string'
 				? this.template
-				: this.template(this.state)
+				: this.template()
 
-			component.methods(this.state, this.changeState)
+			this.methods()
 		}
 
 		connectedCallback() {
 			this.render()
 
-			component.mounted(this.state, this.changeState)
+			this.mounted()
 		}
 		disconnectedCallback() {
-			component.unMounted(this.state, this.changeState)
+			this.unMounted()
 		}
 	}
 

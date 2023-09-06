@@ -9,8 +9,8 @@ const App = pipe(
 	useTemplate(`
 		<div class="h-screen w-screen">
 			${useRouter({
-				'/': `<freevue-index></freevue-index>`,
-				'/editor': `<freevue-editor></freevue-editor>`,
+				'/': `<freevue-page-index></freevue-page-index>`,
+				'/editor': `<freevue-page-editor></freevue-page-editor>`,
 			})}
 		</div>
 	`),

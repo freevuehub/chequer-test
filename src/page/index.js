@@ -17,7 +17,7 @@ const PageIndex = pipe(
 			</button>
 		</div>
 	`),
-	useElement('freevue-index')
+	useElement('freevue-page-index')
 )
 
 export default PageIndex
